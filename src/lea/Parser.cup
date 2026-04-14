@@ -32,26 +32,75 @@ parser code {:
 :}
 
 
-terminal				PLUS, MOINS, MULTIPLIE, PAR_G, PAR_D, CRO_G, CRO_D;
+terminal				PLUS, MOINS, MULTIPLIE, PAR_G, PAR_D, CRO_G, CRO_D, OU, ET, NON, EGAL;
 terminal		Integer ENTIER;
 
-non terminal	Integer	input, expression, dyck;
+non terminal	Integer	input, expr, somme, produit, terme, dyck, opBool, et, ou, no, egal;
 
 
 input ::= 
-		expression:e								{: RESULT = e; :}
-	|	dyck:d										{: RESULT = d; :}
+		dyck:d										{: RESULT = d; :}
+	|	opBool:ob									{: RESULT = ob; :}
 ;
 
 
-expression ::= /* à modifier dans l'exercice 3 */
+expr ::= /* à modifier dans l'exercice 3 */
+		somme:s										{: RESULT = s; :}
+;
+
+somme ::=
+		somme:s PLUS produit:p						{: RESULT = s + p; :}
+	|	somme:s MOINS produit:p						{: RESULT = s - p; :}
+	|	produit:p									{: RESULT = p; :}
+;
+
+produit ::=
+		produit:p MULTIPLIE terme:t					{: RESULT = p * t; :}
+	|	terme:t										{: RESULT = t; :}
+;
+
+terme ::=
 		ENTIER:n									{: RESULT = n; :}
-	|	expression:left expression:right PLUS		{: RESULT = left + right; :}
-	|	expression:left expression:right MOINS		{: RESULT = left - right; :}
-	|	expression:left expression:right MULTIPLIE	{: RESULT = left * right; :}
+	|	MOINS ENTIER:n								{: RESULT = -n; :}
+	|	PAR_G expr:s PAR_D							{: RESULT = s; :}
+	|	MOINS PAR_G expr:s PAR_D					{: RESULT = -s; :}
 ;
 
 
 dyck ::=  /* à remplir dans l'exercice 2 */
 		/* epsilon */						{: RESULT = 0; :}
+	|	dyck:d1 CRO_G dyck:d2 CRO_D
+	{: 
+		int max = d1;
+		if (d1 < 1 + d2){
+			max = 1 + d2;
+		}
+		RESULT = max;
+	:}
+;
+
+opBool ::=
+    ou:o    {: RESULT = o; :}
+  | egal:e  {: RESULT = e; :}
+;
+
+ou ::=
+		ou:o OU et:e						{: RESULT = 1; if(o == 0 && e == 0){RESULT = 0;} :}
+	|	et:e								{: RESULT = e; :}
+;
+
+et ::=
+		et:e ET no:n						{: RESULT = 1; if(e == 0 || n == 0){RESULT = 0;} :}
+	|	no:n								{: RESULT = n; :}
+;
+
+no ::=
+    NON no:n            {: RESULT = (n == 0) ? 1 : 0; :}
+  | PAR_G no:n PAR_D    {: RESULT = n; :}
+  | expr:e              {: RESULT = e; :}
+;
+
+egal ::=
+    expr:e1 EGAL expr:e2  {: RESULT = 0; if (e1 == e2) { RESULT = 1; } :}
+  | expr:e                {: RESULT = e; :}
 ;
